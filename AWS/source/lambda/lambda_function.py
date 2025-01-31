@@ -254,12 +254,12 @@ def lambda_handler(event, context):
                 register_ecr(regions, role_arn, external_id, falcon_client_id, falcon_secret, account)
                 print('ECR Connection registration complete!')
                 cfnresponse_send(event, SUCCESS, response, "CustomResourcePhysicalID")
-            elif event['RequestType'] in ['Delete']:
-                local_entities = get_entities(falcon_client_id, falcon_secret, account)
-                delete_entities(falcon_client_id, falcon_secret, local_entities)
-                delete_role()
-                print("Complete!")
-                cfnresponse_send(event, SUCCESS, response, "CustomResourcePhysicalID")
+            # elif event['RequestType'] in ['Delete']:
+            #     local_entities = get_entities(falcon_client_id, falcon_secret, account)
+            #     delete_entities(falcon_client_id, falcon_secret, local_entities)
+            #     delete_role()
+            #     print("Complete!")
+            #     cfnresponse_send(event, SUCCESS, response, "CustomResourcePhysicalID")
             else:
                 print("complete")
                 cfnresponse_send(event, SUCCESS, response, "CustomResourcePhysicalID")
