@@ -231,6 +231,9 @@ def delete_role():
         ssm.delete_parameter(
             Name='crowdstrike-ecr-lambda-role-id'
         )
+        ssm.delete_parameter(
+            Name='crowdstrike-ecr-lambda-external-id'
+        )
     except Exception as e:
         print("send(..) failed deleting the connection role(..): " + str(e))
 
