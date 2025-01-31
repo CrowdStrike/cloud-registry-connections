@@ -39,7 +39,7 @@ The lambda package in this repo must be packaged and uploaded to an S3 Bucket.
 ```
 cd /source/lambda
 pip install -t . -r requirements.txt
-zip lambda_function.zip *
+zip -r lambda_function.zip .
 ```
 
 2. Upload lambda_function.zip to the root of an S3 Bucket in the region you will launch the template.
