@@ -25,15 +25,7 @@ The distributor package uses the CrowdStrike API to download the sensor onto the
     | Falcon Container Image | *READ*     | List registry connections, view registry connection details. |
     | Falcon Container Image | *WRITE*    | Create, update, or delete a registry connection.             |
 
-3. Click **Add** to create the API client. The next screen will display the API **CLIENT ID**, **SECRET**, and **BASE URL**. You will need all three for the next step.
-
-    <details><summary>picture</summary>
-    <p>
-
-    ![api-client-keys](./assets/api-client-keys.png)
-
-    </p>
-    </details>
+3. Click **Add** to create the API client. The next screen will display the API **CLIENT ID**, **SECRET**, and **BASE URL**.
 
 > Note: This page is only shown once. Make sure you copy **CLIENT ID**, **SECRET**, and **BASE URL** to a secure location.
 
@@ -54,7 +46,7 @@ zip lambda_function.zip *
 
 ## Single Account Deployment
 
-Launch this template in your account as a stack and configure the following parameters:
+Launch the [template](./cloudformation/ecr-registration-stack.yml) in your account as a stack and configure the following parameters:
 
 | Name  | Description   | Type  | Default | Required |
 | ----- | ------------- | ----- | ------- | :------: |
@@ -70,7 +62,7 @@ The template includes a trigger to invoke the lambda function on create.  It may
 
 ## Organization Deployment
 
-Launch this template in your account as a Service Managed **StackSet**.  For more information on StackSets see [AWS Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacksets-orgs-associate-stackset-with-org.html)
+Launch the [template](./cloudformation/ecr-registration-stack.yml) in your account as a Service Managed **StackSet** against a **single region**.  For more information on StackSets see [AWS Documentation](https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/stacksets-orgs-associate-stackset-with-org.html)
 
 > Note: To deploy this solution against an AWS Organization the S3 Bucket must allow organization access.  Please see this example bucket policy for guidance:
 
