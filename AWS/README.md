@@ -145,6 +145,8 @@ By default, when you delete the Stack, the AWS resources provisioned will be del
 ### Automatic Disconnect Option
 To automatically disconnect ECR Registry connections when the stack is deleted, set the `DisconnectUponDelete` parameter to `True` when deploying the stack. This is the recommended approach for managing registry connection cleanup.
 
+If you have already deployed the stack with `DisconnectUponDelete` parameter set to `False`, and wish to delete the stack and disconnect ECR Registry Connections, first update the stack with `DisconnectUponDelete` parameter set to `True`.  Once the update is complete, you may now continue with deleting the stack.
+
 ### Manual Disconnect Option (Legacy)
 Alternatively, you can manually uncomment the following code in the lambda function before deleting the stack:
 
@@ -172,4 +174,4 @@ This template now supports deployment in AWS GovCloud environments:
 - The template will automatically configure the appropriate CrowdStrike principals and policies for GovCloud environments
 
 ## 🌍 Region Configuration
-The `Regions` parameter allows you to specify which AWS regions should have ECR registry connections created. This provides flexibility to only register ECR repositories in specific regions where they are actively used, rather than all active regions in the account.
+The `Regions` parameter allows you to specify which AWS regions should have ECR registry connections created. This provides flexibility to only register ECR repositories in specific regions where they are actively used, rather than all active regions in the account.  If this parameter is left blank, all active regions will be registered.
