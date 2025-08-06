@@ -75,7 +75,7 @@ Launch the [template](./cloudformation/ecr-registration-stack.yml) in your accou
 ### Deployment Scope Parameters
 | Name  | Description   | Type  | Default | Required |
 | ----- | ------------- | ----- | ------- | :------: |
-| Regions  | Which regions to register ECR Connections. | `string` | `[]`  |    yes    |
+| Regions  | Which regions to register ECR Connections. | `string` | `[]`  |    no    |
 
 ### Falcon API Credentials Parameters
 | Name  | Description   | Type  | Default | Required |

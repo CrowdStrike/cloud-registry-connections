@@ -68,12 +68,37 @@ def get_secret(event):
 def create_role(external_id):
     """Function to create the IAM Role for ECR Registry Connection to CrowdStrike"""
     connection_role = f"{ROLE_NAME}-{STACK_ID}"
+    client = boto3.client('iam')
+    
+    # Check if role already exists
+    try:
+        existing_role = client.get_role(RoleName=connection_role)
+        print(f"Role '{connection_role}' already exists")        
+        # Ensure the policy is attached (in case it was detached)
+        try:
+            client.attach_role_policy(
+                RoleName=connection_role,
+                PolicyArn=ROLE_POLICY_ARN
+            )
+        except ClientError as e:
+            if e.response['Error']['Code'] != 'EntityAlreadyExists':
+                raise e
+        return existing_role['Role']['Arn']
+    except ClientError as e:
+        if e.response['Error']['Code'] != 'NoSuchEntity':
+            # Re-raise if it's not a "role doesn't exist" error
+            raise e
+    
+    # Role doesn't exist, create it
+    print(f"Creating new role: {connection_role}")
+    
     if GOV_CLOUD:
-        principal=GOV_CLOUD_PRINCIPAL
+        principal = GOV_CLOUD_PRINCIPAL
     elif COMM_TO_GOV_CLOUD:
-        principal=GOV_CLOUD_PRINCIPAL
+        principal = GOV_CLOUD_PRINCIPAL
     else:
-        principal=CROWDSTRIKE_PRINCIPAL
+        principal = CROWDSTRIKE_PRINCIPAL
+        
     trust_policy = json.dumps({
         "Version": "2012-10-17",
         "Statement": [
@@ -91,7 +116,8 @@ def create_role(external_id):
             }
         ]
     })
-    client = boto3.client('iam')
+    
+    # Create the role
     if PERMISSIONS_BOUNDARY:
         role = client.create_role(
             RoleName=connection_role,
@@ -105,10 +131,14 @@ def create_role(external_id):
             AssumeRolePolicyDocument=trust_policy,
             Description='ReadOnly role to facilitate ECR Registry connections to CrowdStrike for Image Assessment'
         )
+    
+    # Attach the policy
     client.attach_role_policy(
         RoleName=connection_role,
         PolicyArn=ROLE_POLICY_ARN
     )
+    
+    print(f"Successfully created role: {connection_role}")
     return role['Role']['Arn']
 
 def get_regions():
@@ -119,7 +149,7 @@ def get_regions():
     else:
         client = boto3.client('ec2')
         response = client.describe_regions()['Regions']
-        for i in response['Regions']:
+        for i in response:
             regions.append(i['RegionName'])
     return regions
 
@@ -237,16 +267,29 @@ def cfnresponse_send(event, context, responseStatus, responseData, physicalResou
 
 def generate_ids():
     ssm = boto3.client('ssm')
-    external_id = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-    ssm.put_parameter(
-        Name=f'crowdstrike-ecr-lambda-external-id-{STACK_ID}',
-        Description='External ID for creating trust policy for CrowdStrike ECR Registry Connection Role',
-        Value=external_id,
-        Type='String',
-        Overwrite=False,
-        Tier='Standard'
-    )
-    return external_id
+    parameter_name = f'crowdstrike-ecr-lambda-external-id-{STACK_ID}'
+    try:
+        response = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
+        external_id = response['Parameter']['Value']
+        print(f"Parameter '{parameter_name}' found, external_id: {external_id}")
+        return external_id
+    except ClientError as e:
+        if e.response['Error']['Code'] == 'ParameterNotFound':
+            print(f"Parameter '{parameter_name}' not found, generating new external_id")
+            external_id = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+            ssm.put_parameter(
+                Name=f'crowdstrike-ecr-lambda-external-id-{STACK_ID}',
+                Description='External ID for creating trust policy for CrowdStrike ECR Registry Connection Role',
+                Value=external_id,
+                Type='String',
+                Overwrite=False,
+                Tier='Standard'
+            )
+            return external_id
+        else:
+            # Re-raise other errors
+            raise e
+    
 
 def delete_role():
     ssm = boto3.client('ssm')
