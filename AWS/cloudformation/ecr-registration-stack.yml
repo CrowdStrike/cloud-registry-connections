@@ -1,37 +1,102 @@
 ---
 AWSTemplateFormatVersion: '2010-09-09'
 
+Metadata:
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+      - Label:
+          default: AWS Configuration
+        Parameters:
+          - S3Bucket
+          - PermissionsBoundary
+          - GovCloud
+          - CommToGovCloud
+      - Label:
+          default: Deployment Scope
+        Parameters:
+          - Regions
+      - Label:
+          default: Falcon API Credentials
+        Parameters:
+          - FalconClientId
+          - FalconSecret
+          - FalconCloud
+      - Label:
+          default: Resource Names
+        Parameters:
+          - ResourcePrefix
+          - ResourceSuffix
+      - Label:
+          default: Retention
+        Parameters:
+          - DisconnectUponDelete
+
 Parameters:
   S3Bucket:
     Type: String
-    Description: Location of templates and lambda.zip package.
-  FalconClientID:
-    Description: Your Falcon OAuth2 Client ID.
-    NoEcho: 'true'
-    Type: String
-  FalconSecret:
-    Description: Your Falcon OAuth2 API Secret.
-    NoEcho: 'true'
-    Type: String
-  SecretsManagerSecretName:
-    Description: Secrets Manager Secret Name that will contain the Falcon ClientId, ClientSecret, and Cloud for the CrowdStrike APIs.
-    Type: String
-    Default: 'crowdstrike-ecr-api-credentials'
-  ECRExecutionRoleName:
-    Type: String
-    Description: The name of the role that will be used for Lambda execution.
-    Default: 'crowdstrike-ecr-lambda-role'
+    Description: Location of templates and lambda.zip package
+
   PermissionsBoundary:
     Type: String
-    Description: The name of the policy used to set the permissions boundary for IAM roles.
+    Description: (Optional) The name of the policy used to set the permissions boundary for IAM roles
     Default: ''
-  ECRLambdaName:
+
+  GovCloud:
+    Description: Whether this is a GovCloud AWS Account
     Type: String
-    Description: The name of the lambda function used to register ECR registry connections.
-    Default: 'crowdstrike-ecr-function'
+    AllowedValues:
+      - 'True'
+      - 'False'
+    Default: 'False'
+
+  CommToGovCloud:
+    Description: Whether this is a commercial AWS Account connecting to GovCloud Falcon
+    Type: String
+    AllowedValues:
+      - 'True'
+      - 'False'
+    Default: 'False'
+
+  Regions:
+    Type: String
+    Description: Which regions to register ECR Connections.  If left blank, all active regions will be registered
+
+  FalconClientId:
+    Description: CrowdStrike Falcon Client ID
+    NoEcho: 'true'
+    Type: String
+
+  FalconSecret:
+    Description: CrowdStrike Falcon Client Secret
+    NoEcho: 'true'
+    Type: String
+
+  FalconCloud:
+    Type: String
+    Description: CrowdStrike Falcon Cloud
+    AllowedValues: ['us-1', 'us-2', 'eu-1', 'us-gov-1', 'us-gov-2']
+
+  ResourcePrefix:
+    Type: String
+    Description: The prefix to be added to all resource names
+    Default: 'crowdstrike-ecr'
+
+  ResourceSuffix:
+    Type: String
+    Description: (Optional) The suffix be added to all resource names
+    Default: ''
+
+  DisconnectUponDelete:
+    Description: Whether to automatically disconnect all ECR Registries from CrowdStrike upon deletion of this stack.
+    Type: String
+    AllowedValues:
+      - 'True'
+      - 'False'
+    Default: 'False'
 
 Conditions:
   SetPermissionsBoundary: !Not [ !Equals [ !Ref PermissionsBoundary, '' ]]
+  IsGov: !Equals [ !Ref 'GovCloud', 'True' ]
 
 Resources:
   CrowdStrikeSecrets:
@@ -43,19 +108,19 @@ Resources:
             comment: The default key aws/secretsmanager is sufficient to secure this resource
     Properties:
       Description: CrowdStrike Credentials
-      Name: !Ref SecretsManagerSecretName
+      Name: !Sub "${ResourcePrefix}-api-credentials${ResourceSuffix}"
       SecretString:
         Fn::Join:
           - ''
           - - '{"FalconClientId":"'
-            - Ref: "FalconClientID"
+            - Ref: "FalconClientId"
             - '","FalconSecret": "'
             - Ref: FalconSecret
             - '"}'
   ECRExecutionRole:
     Type: 'AWS::IAM::Role'
     Properties:
-      RoleName: !Ref ECRExecutionRoleName
+      RoleName: !Sub "${ResourcePrefix}-execution-role${ResourceSuffix}"
       PermissionsBoundary:
         Fn::If:
           - SetPermissionsBoundary
@@ -86,12 +151,13 @@ Resources:
                   - ssm:PutParameter
                   - ssm:GetParameter
                   - ssm:DeleteParameter
-                Resource: "*"
+                Resource:
+                  - !Sub 'arn:${AWS::Partition}:ssm:*:*:parameter/crowdstrike-ecr-lambda-external-id-*'
               - Effect: Allow
                 Action:
                   - 'secretsmanager:GetSecretValue'
                 Resource:
-                  - !Sub 'arn:${AWS::Partition}:secretsmanager:*:*:secret:${SecretsManagerSecretName}-*'
+                  - !Sub 'arn:${AWS::Partition}:secretsmanager:*:*:secret:${ResourcePrefix}-api-credentials${ResourceSuffix}*'
               - Effect: Allow
                 Action:
                   - iam:ListPolicies
@@ -115,37 +181,27 @@ Resources:
   ECRLambda:
     Type: AWS::Lambda::Function
     DependsOn: CrowdStrikeSecrets
-    Metadata:
-      cfn_nag:
-        rules_to_suppress:
-          - id: W89
-            reason: Lambda custom resource only run during stack lifecycle events.
-          - id: W92
-            reason: Lambda custom resource only run during stack lifecycle events.
-      checkov:
-        skip:
-          - id: CKV_AWS_115
-            comment: Lambda does not need reserved concurrent executions.
-          - id: CKV_AWS_116
-            comment: DLQ not needed, as Lambda function only triggered by CloudFormation events.
-          - id: CKV_AWS_117
-            comment: Lambda does not need to communicate with VPC resources.
-          - id: CKV_AWS_173
-            comment: Environment variables are not sensitive.
     Properties:
       Environment:
         Variables:
-          secret_name: !Ref SecretsManagerSecretName
+          secret_name: !Sub "${ResourcePrefix}-api-credentials${ResourceSuffix}"
           secret_region: !Ref AWS::Region
           permissions_boundary: !If [SetPermissionsBoundary, !Sub 'arn:${AWS::Partition}:iam::${AWS::AccountId}:policy/${PermissionsBoundary}', '']
           crowdstrike_principal: arn:aws:iam::292230061137:role/CrowdStrikeCustomerRegistryAssessmentRole
-          gov_cloud: false
-      Handler: lambda_function.lambda_handler
+          gov_cloud_principal: arn:aws-us-gov:iam::358431324613:role/CrowdStrikeCustomerRegistryAssessmentRole
+          gov_cloud: !Ref GovCloud
+          comm_to_gov_cloud: !Ref CommToGovCloud
+          stack_id: !Select [4, !Split ['-', !Select [2, !Split ['/', !Ref AWS::StackId]]]]
+          disconnect_upon_delete: !Ref DisconnectUponDelete
+          cs_cloud: !Ref FalconCloud
+          role_policy_arn: !If [IsGov, "arn:aws-us-gov:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly", "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"]
+          regions: !Ref Regions
+      Handler: lambda.lambda_handler
       MemorySize: 128
       Role: !GetAtt ECRExecutionRole.Arn
       Runtime: python3.12
       Timeout: 300
-      FunctionName: !Ref ECRLambdaName
+      FunctionName: !Sub "${ResourcePrefix}-function${ResourceSuffix}"
       Code:
         S3Bucket: !Ref S3Bucket
         S3Key: lambda_function.zip
