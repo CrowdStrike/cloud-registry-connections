@@ -19,13 +19,17 @@ Metadata:
           default: Falcon API Credentials
         Parameters:
           - FalconClientId
-          - FalconClientSecret
+          - FalconSecret
           - FalconCloud
       - Label:
           default: Resource Names
         Parameters:
           - ResourcePrefix
           - ResourceSuffix
+      - Label:
+          default: Retention
+        Parameters:
+          - DisconnectUponDelete
 
 Parameters:
   S3Bucket:
@@ -55,7 +59,7 @@ Parameters:
 
   Regions:
     Type: String
-    Description: Which regions to register ECR Connections
+    Description: Which regions to register ECR Connections.  If left blank, all active regions will be registered
 
   FalconClientId:
     Description: CrowdStrike Falcon Client ID

@@ -4,13 +4,13 @@ Create an ECR registry connection in each active AWS Region in the account to en
 
 ## ✨ Features
 
-- **🌐 Multi-Region Support**: Automatically registers ECR connections across multiple AWS regions or specific regions based on configuration
-- **🏛️ GovCloud Compatibility**: Full support for AWS GovCloud environments with appropriate security principals
-- **🏷️ Flexible Resource Naming**: Customizable resource prefixes and suffixes for organizational compliance
-- **🧹 Automatic Cleanup**: Optional automatic disconnection of registry connections when the stack is deleted
-- **🔐 Secure Credential Management**: API credentials stored securely in AWS Secrets Manager
-- **🏢 Organization Deployment**: Support for AWS Organizations via CloudFormation StackSets
-- **📊 Comprehensive Logging**: Detailed CloudWatch logging for troubleshooting and monitoring
+- **🌐  Multi-Region Support**: Automatically registers ECR connections across multiple AWS regions or specific regions based on configuration
+- **🏛️  GovCloud Compatibility**: Full support for AWS GovCloud environments with appropriate security principals
+- **🏷️  Flexible Resource Naming**: Customizable resource prefixes and suffixes for organizational compliance
+- **🧹  Automatic Cleanup**: Optional automatic disconnection of registry connections when the stack is deleted
+- **🔐  Secure Credential Management**: API credentials stored securely in AWS Secrets Manager
+- **🏢  Organization Deployment**: Support for AWS Organizations via CloudFormation StackSets
+- **📊  Comprehensive Logging**: Detailed CloudWatch logging for troubleshooting and monitoring
 
 ## ⚙️ How it Works
 
