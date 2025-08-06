@@ -290,7 +290,7 @@ def lambda_handler(event, context):
                 if DISCONNECT_UPON_DELETE:
                     local_entities = get_entities(falcon_client_id, falcon_secret, account)
                     delete_entities(falcon_client_id, falcon_secret, local_entities)
-                    delete_role(event)
+                    delete_role()
                     print("Complete!")
                 cfnresponse_send(event, context, SUCCESS, response, "CustomResourcePhysicalID")
             else:
