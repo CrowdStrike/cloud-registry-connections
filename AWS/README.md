@@ -53,7 +53,7 @@ The lambda package in this repo must be packaged and uploaded to an S3 Bucket.
 1. Run the following commands:
 
 ```
-cd /source/lambda
+cd source/lambda
 pip install -t . -r requirements.txt
 zip -r lambda_function.zip .
 ```
