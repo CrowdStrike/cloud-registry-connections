@@ -1,3 +1,6 @@
+![CrowdStrike Logo (Light)](https://raw.githubusercontent.com/CrowdStrike/.github/main/assets/cs-logo-light-mode.png#gh-light-mode-only)
+![CrowdStrike Logo (Dark)](https://raw.githubusercontent.com/CrowdStrike/.github/main/assets/cs-logo-dark-mode.png#gh-dark-mode-only)
+
 # Cloud Registry Connections
 
 This repository contains the documentation and source code to create cloud registry connections for Falcon Cloud Security Image Assessments.
