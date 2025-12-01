@@ -2,6 +2,10 @@
 
 Create an ECR registry connection in each active AWS Region in the account to ensure all ECR Repositories will be protected with Image Assessment.
 
+## Demo
+
+[![Demo of Automated Amazon ECR Registration](https://play.vidyard.com/UHNAQ5hH8GfHndgVnB3bwt.jpg)](https://vid.crowdstrike.com/watch/UHNAQ5hH8GfHndgVnB3bwt)
+
 ## ✨ Features
 
 - **🌐  Multi-Region Support**: Automatically registers ECR connections across multiple AWS regions or specific regions based on configuration
@@ -48,6 +52,7 @@ The distributor package uses the CrowdStrike API to download the sensor onto the
 Falcon Container Image: Read & Write
 
 ### Lambda Package
+
 The lambda package in this repo must be packaged and uploaded to an S3 Bucket.
 
 1. Run the following commands:
@@ -65,6 +70,7 @@ zip -r lambda_function.zip .
 Launch the [template](./cloudformation/ecr-registration-stack.yml) in your account as a stack and configure the following parameters:
 
 ### AWS Configuration Parameters
+
 | Name  | Description   | Type  | Default | Required |
 | ----- | ------------- | ----- | ------- | :------: |
 | S3Bucket  | Location of templates and lambda.zip package. | `string` | `[]`  |    yes    |
@@ -73,11 +79,13 @@ Launch the [template](./cloudformation/ecr-registration-stack.yml) in your accou
 | CommToGovCloud  | Whether this is a commercial AWS Account connecting to GovCloud Falcon. | `string` | `False`  |    yes    |
 
 ### Deployment Scope Parameters
+
 | Name  | Description   | Type  | Default | Required |
 | ----- | ------------- | ----- | ------- | :------: |
 | Regions  | Which regions to register ECR Connections. | `string` | `[]`  |    no    |
 
 ### Falcon API Credentials Parameters
+
 | Name  | Description   | Type  | Default | Required |
 | ----- | ------------- | ----- | ------- | :------: |
 | FalconClientId  | Your Falcon OAuth2 Client ID. | `string` | `[]`  |    yes    |
@@ -85,12 +93,14 @@ Launch the [template](./cloudformation/ecr-registration-stack.yml) in your accou
 | FalconCloud  | CrowdStrike Falcon Cloud (us-1, us-2, eu-1, us-gov-1, us-gov-2). | `string` | `[]`  |    yes    |
 
 ### Resource Names Parameters
+
 | Name  | Description   | Type  | Default | Required |
 | ----- | ------------- | ----- | ------- | :------: |
 | ResourcePrefix  | The prefix to be added to all resource names. | `string` | `crowdstrike-ecr`  |    yes    |
 | ResourceSuffix  | The suffix to be added to all resource names. | `string` | `[]`  |    no    |
 
 ### Additional Parameters
+
 | Name  | Description   | Type  | Default | Required |
 | ----- | ------------- | ----- | ------- | :------: |
 | DisconnectUponDelete  | Whether to automatically disconnect all ECR Registries from CrowdStrike upon deletion of this stack. | `string` | `False`  |    yes    |
@@ -140,14 +150,17 @@ PolicyDocument:
 ```
 
 ## 🗑️ Deleting the Stack
+
 By default, when you delete the Stack, the AWS resources provisioned will be deleted but the Registry Connections will remain.
 
 ### Automatic Disconnect Option
+
 To automatically disconnect ECR Registry connections when the stack is deleted, set the `DisconnectUponDelete` parameter to `True` when deploying the stack. This is the recommended approach for managing registry connection cleanup.
 
 If you have already deployed the stack with `DisconnectUponDelete` parameter set to `False`, and wish to delete the stack and disconnect ECR Registry Connections, first update the stack with `DisconnectUponDelete` parameter set to `True`.  Once the update is complete, you may now continue with deleting the stack.
 
 ### Manual Disconnect Option (Legacy)
+
 Alternatively, you can manually uncomment the following code in the lambda function before deleting the stack:
 
 ```python
@@ -164,9 +177,11 @@ elif event['RequestType'] in ['Delete']:
 > All ECR Registry connections for this AWS account will be removed from Falcon when the stack is deleted.
 
 ## 🔍 Troubleshooting
+
 If you experience any failures please review the logs in CloudWatch > Log groups `/aws/lambda/{ResourcePrefix}-function{ResourceSuffix}` (default: `/aws/lambda/crowdstrike-ecr-function`).
 
 ## 🏛️ GovCloud Support
+
 This template now supports deployment in AWS GovCloud environments:
 
 - Set the `GovCloud` parameter to `True` when deploying in a GovCloud account
@@ -174,4 +189,5 @@ This template now supports deployment in AWS GovCloud environments:
 - The template will automatically configure the appropriate CrowdStrike principals and policies for GovCloud environments
 
 ## 🌍 Region Configuration
+
 The `Regions` parameter allows you to specify which AWS regions should have ECR registry connections created. This provides flexibility to only register ECR repositories in specific regions where they are actively used, rather than all active regions in the account.  If this parameter is left blank, all active regions will be registered.
