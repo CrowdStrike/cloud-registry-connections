@@ -9,7 +9,7 @@ import os
 import base64
 
 # import subprocess
-import random
+import secrets
 import string
 import time
 import boto3
@@ -284,19 +284,18 @@ def generate_ids():
     try:
         response = ssm.get_parameter(Name=parameter_name, WithDecryption=True)
         external_id = response["Parameter"]["Value"]
-        print(f"Parameter '{parameter_name}' found, external_id: {external_id}")
+        # Do not log the ExternalId value — it's a credential (SOLAR-2412)
+        print(f"Parameter '{parameter_name}' found")
         return external_id
     except ClientError as e:
         if e.response["Error"]["Code"] == "ParameterNotFound":
             print(f"Parameter '{parameter_name}' not found, generating new external_id")
-            external_id = "".join(
-                random.choices(string.ascii_letters + string.digits, k=16)
-            )
+            external_id = secrets.token_urlsafe(24)  # CSPRNG, 192 bits of entropy (SOLAR-2412)
             ssm.put_parameter(
                 Name=f"crowdstrike-ecr-lambda-external-id-{STACK_ID}",
                 Description="External ID for creating trust policy for CrowdStrike ECR Registry Connection Role",
                 Value=external_id,
-                Type="String",
+                Type="SecureString",  # encrypted at rest (SOLAR-2412)
                 Overwrite=False,
                 Tier="Standard",
             )
@@ -319,7 +318,9 @@ def delete_role():
 
 def lambda_handler(event, context):
     """Main Function"""
-    logger.info("Got event %s" % event)
+    # Redact ResponseURL from logs — it's a presigned S3 URL that grants write access (SOLAR-2414)
+    safe_event = {k: v for k, v in event.items() if k != "ResponseURL"}
+    logger.info("Got event %s" % safe_event)
     logger.info("Context %s" % context)
     account = boto3.client("sts").get_caller_identity().get("Account")
     response = {}
