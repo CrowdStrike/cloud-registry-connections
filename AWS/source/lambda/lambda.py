@@ -359,10 +359,29 @@ def lambda_handler(event, context):
                 cfnresponse_send(
                     event, context, SUCCESS, response, "CustomResourcePhysicalID"
                 )
-            else:
-                print("complete")
+            elif event["RequestType"] == "Update":
+                # Update is not supported — re-running registration risks creating
+                # duplicate entities.  Return FAILED so operators see that parameter
+                # changes were not applied (SOLAR-2416).
+                logger.warning(
+                    "RequestType=Update is not supported by this custom resource. "
+                    "Delete and re-create the stack to apply changes."
+                )
                 cfnresponse_send(
-                    event, context, SUCCESS, response, "CustomResourcePhysicalID"
+                    event,
+                    context,
+                    FAILED,
+                    {"error": "Update not supported. Delete and re-create the stack to apply changes."},
+                    "CustomResourcePhysicalID",
+                )
+            else:
+                logger.warning("Unrecognised RequestType=%s; returning FAILED", event.get("RequestType"))
+                cfnresponse_send(
+                    event,
+                    context,
+                    FAILED,
+                    {"error": f"Unknown RequestType: {event.get('RequestType')}"},
+                    "CustomResourcePhysicalID",
                 )
         else:
             print("complete")
